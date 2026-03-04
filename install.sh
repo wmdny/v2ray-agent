@@ -1441,7 +1441,16 @@ server {
 EOF
         handleNginx start
         # 检查域名+端口的开放
-        checkPortOpenResult=$(curl -s -m 10 "http://${domain}:${port}/checkPort")
+        # 替换原有的 checkPortOpenResult 赋值行
+		if [[ "${port}" == "443" ]]; then
+		    # 443 端口用 HTTPS 检测，跳过证书验证（避免证书问题干扰）
+		    checkPortOpenResult=$(curl -s -m 10 --insecure "https://${domain}:${port}/checkPort")
+		    localIP=$(curl -s -m 10 --insecure "https://${domain}:${port}/ip")
+		else
+		    # 80 端口用 HTTP 检测（保持原有逻辑）
+		    checkPortOpenResult=$(curl -s -m 10 "http://${domain}:${port}/checkPort")
+		    localIP=$(curl -s -m 10 "http://${domain}:${port}/ip")
+		fi
         localIP=$(curl -s -m 10 "http://${domain}:${port}/ip")
         rm "${nginxConfigPath}checkPortOpen.conf"
         handleNginx stop
